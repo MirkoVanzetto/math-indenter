@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math Editor Pro</title>
+    
+    <!-- Content Security Policy SICURO -->
+    <meta http-equiv="Content-Security-Policy" 
+          content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com/ajax/libs/mathjax/ https://cdn.jsdelivr.net/; 
+                   script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com/ajax/libs/mathjax/ https://cdn.jsdelivr.net/;
+                   style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com/;
+                   font-src 'self' https://cdnjs.cloudflare.com/;">
+    
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="app-header">
+        <div class="header-content">
+            <div class="logo">
+                <span class="logo-icon">🧮</span>
+                <h1>Math Editor Pro</h1>
+            </div>
+            <div class="status-bar">
+                <span id="statusText">Pronto a calcolare</span>
+                <span class="status-indicator" id="statusIndicator"></span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="main-container">
+        <!-- Sidebar Variabili -->
+        <section class="sidebar">
+            <div class="sidebar-header">
+                <h2>📊 Variabili</h2>
+                <button class="btn-help" title="Aiuto" onclick="mathEditor.showHelp()">?</button>
+            </div>
+            
+            <div class="variables-editor-container">
+                <textarea id="variablesEditor" placeholder="Definisci le tue variabili qui...
+Esempio:
+x = velocità del veicolo (m/s)
+y = throughput del sistema (ops/sec)
+t = tempo in secondi
+a = accelerazione costante (m/s²)
+
+Ogni variabile su una nuova linea!"></textarea>
+            </div>
+
+            <div class="variables-list-container">
+                <h3>Variabili definite:</h3>
+                <div class="variables-list" id="variablesList">
+                    <div class="empty-state">
+                        <span>📝</span>
+                        <p>Nessuna variabile definita</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Editor Principale -->
+        <section class="main-editor">
+            <div class="editor-header">
+                <h2>📝 Editor Funzione</h2>
+                <div class="editor-controls">
+                    <button class="btn-clear" onclick="mathEditor.clearEditor()">🗑️ Pulisci</button>
+                    <button class="btn-format" onclick="mathEditor.formatCode()">🔧 Formatta</button>
+                    <button class="btn-newline" onclick="mathEditor.insertNewLine()">↵ Nuova Linea</button>
+                </div>
+            </div>
+
+            <!-- Toolbar Simboli - VERSIONE ESPANSA -->
+            <div class="symbols-toolbar">
+                <div class="toolbar-section">
+                    <span>Operatori:</span>
+                    <div class="toolbar-buttons">
+                        <button onclick="insertSymbol('∑')" title="Sommatoria">∑</button>
+                        <button onclick="insertSymbol('∫')" title="Integrale">∫</button>
+                        <button onclick="insertSymbol('∂')" title="Derivata parziale">∂</button>
+                        <button onclick="insertSymbol('∇')" title="Nabla">∇</button>
+                        <button onclick="insertSymbol('∆')" title="Delta">∆</button>
+                        <button onclick="insertSymbol('√')" title="Radice">√</button>
+                        <button onclick="insertSymbol('∛')" title="Radice cubica">∛</button>
+                        <button onclick="insertSymbol('∜')" title="Radice quarta">∜</button>
+                    </div>
+                </div>
+                
+                <div class="toolbar-section">
+                    <span>Costanti:</span>
+                    <div class="toolbar-buttons">
+                        <button onclick="insertSymbol('π')" title="Pi greco">π</button>
+                        <button onclick="insertSymbol('∞')" title="Infinito">∞</button>
+                        <button onclick="insertSymbol('∅')" title="Insieme vuoto">∅</button>
+                        <button onclick="insertSymbol('ℕ')" title="Numeri naturali">ℕ</button>
+                        <button onclick="insertSymbol('ℤ')" title="Numeri interi">ℤ</button>
+                        <button onclick="insertSymbol('ℚ')" title="Numeri razionali">ℚ</button>
+                        <button onclick="insertSymbol('ℝ')" title="Numeri reali">ℝ</button>
+                        <button onclick="insertSymbol('ℂ')" title="Numeri complessi">ℂ</button>
+                    </div>
+                </div>
+
+                <div class="toolbar-section">
+                    <span>Greche:</span>
+                    <div class="toolbar-buttons">
+                        <button onclick="insertSymbol('α')" title="Alpha">α</button>
+                        <button onclick="insertSymbol('β')" title="Beta">β</button>
+                        <button onclick="insertSymbol('γ')" title="Gamma">γ</button>
+                        <button onclick="insertSymbol('δ')" title="Delta">δ</button>
+                        <button onclick="insertSymbol('ε')" title="Epsilon">ε</button>
+                        <button onclick="insertSymbol('θ')" title="Theta">θ</button>
+                        <button onclick="insertSymbol('λ')" title="Lambda">λ</button>
+                        <button onclick="insertSymbol('μ')" title="Mu">μ</button>
+                        <button onclick="insertSymbol('σ')" title="Sigma">σ</button>
+                        <button onclick="insertSymbol('φ')" title="Phi">φ</button>
+                        <button onclick="insertSymbol('ω')" title="Omega">ω</button>
+                    </div>
+                </div>
+
+                <div class="toolbar-section">
+                    <span>Relazioni:</span>
+                    <div class="toolbar-buttons">
+                        <button onclick="insertSymbol('=')" title="Uguale">=</button>
+                        <button onclick="insertSymbol('≠')" title="Diverso">≠</button>
+                        <button onclick="insertSymbol('≈')" title="Circa uguale">≈</button>
+                        <button onclick="insertSymbol('≡')" title="Equivalente">≡</button>
+                        <button onclick="insertSymbol('≤')" title="Minore/Uguale">≤</button>
+                        <button onclick="insertSymbol('≥')" title="Maggiore/Uguale">≥</button>
+                        <button onclick="insertSymbol('≪')" title="Molto minore">≪</button>
+                        <button onclick="insertSymbol('≫')" title="Molto maggiore">≫</button>
+                    </div>
+                </div>
+
+                <div class="toolbar-section">
+                    <span>Insiemi:</span>
+                    <div class="toolbar-buttons">
+                        <button onclick="insertSymbol('∈')" title="Appartiene">∈</button>
+                        <button onclick="insertSymbol('∉')" title="Non appartiene">∉</button>
+                        <button onclick="insertSymbol('⊂')" title="Sottoinsieme">⊂</button>
+                        <button onclick="insertSymbol('⊆')" title="Sottoinsieme o uguale">⊆</button>
+                        <button onclick="insertSymbol('∩')" title="Intersezione">∩</button>
+                        <button onclick="insertSymbol('∪')" title="Unione">∪</button>
+                    </div>
+                </div>
+
+                <div class="toolbar-section">
+                    <span>Logica:</span>
+                    <div class="toolbar-buttons">
+                        <button onclick="insertSymbol('∀')" title="Per ogni">∀</button>
+                        <button onclick="insertSymbol('∃')" title="Esiste">∃</button>
+                        <button onclick="insertSymbol('∄')" title="Non esiste">∄</button>
+                        <button onclick="insertSymbol('⇒')" title="Implica">⇒</button>
+                        <button onclick="insertSymbol('⇔')" title="Se e solo se">⇔</button>
+                    </div>
+                </div>
+
+                <div class="toolbar-section">
+                    <span>Operatori:</span>
+                    <div class="toolbar-buttons">
+                        <button onclick="insertSymbol('±')" title="Più/Meno">±</button>
+                        <button onclick="insertSymbol('∓')" title="Meno/Più">∓</button>
+                        <button onclick="insertSymbol('×')" title="Prodotto vettoriale">×</button>
+                        <button onclick="insertSymbol('÷')" title="Divisione">÷</button>
+                        <button onclick="insertSymbol('⋅')" title="Prodotto scalare">⋅</button>
+                    </div>
+                </div>
+
+                <div class="toolbar-section">
+                    <span>Frecce:</span>
+                    <div class="toolbar-buttons">
+                        <button onclick="insertSymbol('→')" title="Freccia destra">→</button>
+                        <button onclick="insertSymbol('←')" title="Freccia sinistra">←</button>
+                        <button onclick="insertSymbol('↔')" title="Freccia bidirezionale">↔</button>
+                        <button onclick="insertSymbol('↦')" title="Mappa a">↦</button>
+                        <button onclick="insertSymbol('↑')" title="Freccia su">↑</button>
+                        <button onclick="insertSymbol('↓')" title="Freccia giù">↓</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Editor Funzione -->
+            <div class="function-editor-container">
+                <textarea id="functionEditor" placeholder="Scrivi le tue funzioni matematiche qui...
+
+Puoi scrivere più funzioni separandole con righe vuote:
+
+f(x) = x² + 2x + 1
+
+g(x) = ∫ f(x) dx
+
+lim x→0 sin(x)/x = 1
+
+Ogni blocco di testo separato da righe vuote diventerà una equazione separata nell'anteprima!
+
+Usa Ctrl+Enter per inserire rapidamente una riga vuota."></textarea>
+            </div>
+
+            <!-- Anteprima -->
+            <div class="preview-section">
+                <div class="preview-header">
+                    <h3>👁️ Anteprima Matematica</h3>
+             
+                        <div class="preview-controls">
+                            <button class="btn-preview" onclick="forceColors()" title="Forza colori">🎨 Color</button>
+                            <button class="btn-preview" onclick="toggleMathJax()" title="MathJax">📐 MathJax</button>
+                        </div>
+                   
+                    <span class="preview-hint">Passa il mouse sulle variabili colorate per i dettagli</span>
+                </div>
+                <div class="math-preview" id="mathPreview">
+                    <div class="preview-placeholder">
+                        <span class="placeholder-icon">🔍</span>
+                        <p>L'anteprima delle tue funzioni apparirà qui</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Tooltip -->
+    <div class="tooltip" id="tooltip"></div>
+
+    <!-- Color Picker Modal -->
+    <div class="modal-overlay" id="colorPickerModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🎨 Seleziona Colore Variabile</h3>
+                <button class="modal-close" onclick="mathEditor.closeColorPicker()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="color-palette" id="colorPalette">
+                    <div class="color-option" data-color="#FF6B6B" style="background: #FF6B6B;"></div>
+                    <div class="color-option" data-color="#4ECDC4" style="background: #4ECDC4;"></div>
+                    <div class="color-option" data-color="#45B7D1" style="background: #45B7D1;"></div>
+                    <div class="color-option" data-color="#96CEB4" style="background: #96CEB4;"></div>
+                    <div class="color-option" data-color="#FFEAA7" style="background: #FFEAA7;"></div>
+                    <div class="color-option" data-color="#DDA0DD" style="background: #DDA0DD;"></div>
+                    <div class="color-option" data-color="#98D8C8" style="background: #98D8C8;"></div>
+                    <div class="color-option" data-color="#F7DC6F" style="background: #F7DC6F;"></div>
+                    <div class="color-option" data-color="#BB8FCE" style="background: #BB8FCE;"></div>
+                    <div class="color-option" data-color="#85C1E9" style="background: #85C1E9;"></div>
+                    <div class="color-option" data-color="#F8C471" style="background: #F8C471;"></div>
+                    <div class="color-option" data-color="#82E0AA" style="background: #82E0AA;"></div>
+                </div>
+                <div class="selected-color-preview">
+                    <span>Colore selezionato:</span>
+                    <div class="color-preview" id="selectedColorPreview"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="mathEditor.closeColorPicker()">Annulla</button>
+                <button class="btn-primary" onclick="mathEditor.confirmColor()">Conferma Colore</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="renderer.js"></script>
+</body>
+</html>

@@ -1,0 +1,34 @@
+{
+    "name": "math-editor",
+    "version": "1.0.0",
+    "description": "Editor matematico avanzato",
+    "main": "main.js",
+    "scripts": {
+        "start": "electron .",
+        "build": "electron-builder",
+        "dist": "electron-builder --publish=never"
+    },
+    "build": {
+        "appId": "com.yourname.matheditor",
+        "productName": "Math Editor Pro",
+        "directories": {
+            "output": "dist"
+        },
+        "files": [
+            "**/*",
+            "!node_modules",
+            "!dist"
+        ],
+        "win": {
+            "target": "nsis",
+            "icon": "assets/icons/icon.ico"
+        },
+        "nsis": {
+            "oneClick": false,
+            "allowToChangeInstallationDirectory": true
+        }
+    },
+    "devDependencies": {
+        "electron": "^28.0.0",
+        "electron-builder": "^24.9.1"
+    }}
