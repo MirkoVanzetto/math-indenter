@@ -1,3 +1,17 @@
+/**
+ * MathEditor - A professional mathematical expression editor with syntax highlighting
+ * and multiple export capabilities. Supports both colored HTML preview and MathJax rendering.
+ * 
+ * Features:
+ * - Real-time mathematical expression editing with syntax highlighting
+ * - Variable management with customizable colors
+ * - Multiple preview modes (colored HTML and MathJax)
+ * - Export to PDF and HTML formats
+ * - File operations (save, open, new)
+ * - Interactive tooltips and hover effects
+ * - Mathematical symbol palette
+ */
+
 class MathEditor {
     constructor() {
         this.currentFilePath = null;
@@ -5,25 +19,32 @@ class MathEditor {
         this.variableColors = {};
         this.currentColorPickerVariable = null;
         this.selectedColor = '#3498DB';
-        this.useMathJax = false; // Flag per toggle tra HTML e MathJax
+        this.useMathJax = false; // Flag to toggle between HTML and MathJax rendering
         this.init();
     }
 
+    /**
+     * Initializes the MathEditor component
+     * Sets up event listeners, menu handlers, color picker, and loads example content
+     */
     init() {
         this.setupEventListeners();
         this.setupMenuHandlers();
         this.setupColorPicker();
-        this.updateStatus('Editor pronto! Usa "🎨 Color" per anteprima colorata', 'success');
+        this.updateStatus('Editor ready! Use "🎨 Color" for colored preview', 'success');
         this.loadExample();
     }
 
+    /**
+     * Loads example mathematical expressions and variables for demonstration
+     */
     loadExample() {
-        const exampleVariables = `x = velocità del veicolo (m/s)
-y = throughput del sistema (ops/sec)
-t = tempo (secondi)
-a = accelerazione costante (m/s²)
-n = numero di iterazioni
-θ = angolo di inclinazione (radianti)`;
+        const exampleVariables = `x = vehicle speed (m/s)
+y = system throughput (ops/sec)
+t = time (seconds)
+a = constant acceleration (m/s²)
+n = number of iterations
+θ = tilt angle (radians)`;
 
         const exampleFunction = `f(x,y) = ∑(x_i * y_i) from i=1 to n
 
@@ -31,7 +52,7 @@ lim t→∞ (1 + 1/t)^t = e
 
 ∂y/∂t = a * t + x
 
-∫ from 0 to t of v(t) dt = posizione`;
+∫ from 0 to t of v(t) dt = position`;
 
         document.getElementById('variablesEditor').value = exampleVariables;
         document.getElementById('functionEditor').value = exampleFunction;
@@ -40,21 +61,26 @@ lim t→∞ (1 + 1/t)^t = e
         this.updateMathPreview();
     }
 
+    /**
+     * Sets up all event listeners for editor interactions
+     */
     setupEventListeners() {
         const variablesEditor = document.getElementById('variablesEditor');
         const functionEditor = document.getElementById('functionEditor');
 
+        // Real-time parsing and preview updates
         variablesEditor.addEventListener('input', () => {
             this.parseVariables();
             this.updateMathPreview();
-            this.updateStatus('Variabili aggiornate', 'info');
+            this.updateStatus('Variables updated', 'info');
         });
 
         functionEditor.addEventListener('input', () => {
             this.updateMathPreview();
-            this.updateStatus('Funzione aggiornata', 'info');
+            this.updateStatus('Function updated', 'info');
         });
 
+        // Enhanced keyboard shortcuts
         functionEditor.addEventListener('keydown', (e) => {
             if (e.key === 'Tab') {
                 e.preventDefault();
@@ -67,7 +93,7 @@ lim t→∞ (1 + 1/t)^t = e
             }
         });
 
-        // Tooltip per l'anteprima
+        // Tooltip management for math preview
         document.getElementById('mathPreview').addEventListener('mouseover', (e) => {
             this.handleMathPreviewHover(e);
         });
@@ -76,7 +102,7 @@ lim t→∞ (1 + 1/t)^t = e
             this.hideTooltip();
         });
 
-        // Tooltip per variabili nell'editor
+        // Tooltip management for variables in editor
         functionEditor.addEventListener('mousemove', (e) => {
             this.handleVariableHover(e);
         });
@@ -86,54 +112,64 @@ lim t→∞ (1 + 1/t)^t = e
         });
     }
 
+    /**
+     * Exports the current mathematical content to PDF format
+     * Handles data preparation and error management
+     */
     async exportPDF() {
         try {
-            // Usa la nuova funzione per preparare i dati
+            // Use new function to prepare data for PDF export
             const data = this.prepareDataForPDF();
             
-            console.log('Dati per PDF:', {
+            console.log('PDF export data:', {
                 variables: Object.keys(data.variables),
                 functions: data.functions
             });
             
-            this.updateStatus('Generando PDF...', 'info');
+            this.updateStatus('Generating PDF...', 'info');
             
             const result = await window.electronAPI.exportPDF(data);
             
             if (result.success) {
-                this.updateStatus(`✅ PDF esportato: ${result.path}`, 'success');
+                this.updateStatus(`✅ PDF exported: ${result.path}`, 'success');
                 
                 setTimeout(() => {
-                    if (confirm('PDF creato con successo! Vuoi aprire la cartella contenente il file?')) {
+                    if (confirm('PDF created successfully! Open containing folder?')) {
                         this.showInFolder(result.path);
                     }
                 }, 500);
             } else {
-                this.updateStatus(`❌ Errore PDF: ${result.error}`, 'danger');
-                console.error('Errore PDF:', result.error);
+                this.updateStatus(`❌ PDF Error: ${result.error}`, 'danger');
+                console.error('PDF Error:', result.error);
             }
         } catch (error) {
-            this.updateStatus(`❌ Errore durante l'esportazione PDF: ${error.message}`, 'danger');
-            console.error('Errore exportPDF:', error);
+            this.updateStatus(`❌ PDF export error: ${error.message}`, 'danger');
+            console.error('exportPDF error:', error);
         }
     }
     
 
-    // Apre la cartella del file (simulato)
+    /**
+     * Opens the file location in system explorer (simulated)
+     * @param {string} filePath - Path to the file
+     */
     openFileLocation(filePath) {
-        // In una vera app Electron, useresti shell.showItemInFolder()
-        console.log('File salvato in:', filePath);
-        // Per ora mostriamo un alert
-        alert(`File salvato in:\n${filePath}`);
+        // In a real Electron app, you would use shell.showItemInFolder()
+        console.log('File saved at:', filePath);
+        // For now, show an alert
+        alert(`File saved at:\n${filePath}`);
     }
 
-    // ESPORTAZIONE HTML
+    /**
+     * Exports the current mathematical content to HTML format
+     * Converts equations to MathJax format and handles export process
+     */
     async exportHTML() {
         try {
             const variablesContent = document.getElementById('variablesEditor').value;
             const functionContent = document.getElementById('functionEditor').value;
             
-            // Parse le variabili per assicurarci siano aggiornate
+            // Parse variables to ensure they are up to date
             this.parseVariables();
             
             const equations = this.splitIntoEquations(functionContent).map(eq => 
@@ -146,45 +182,52 @@ lim t→∞ (1 + 1/t)^t = e
                 functions: equations
             };
             
-            console.log('Dati per HTML:', data); // Debug
+            console.log('HTML export data:', data); // Debug
             
-            this.updateStatus('Generando HTML...', 'info');
+            this.updateStatus('Generating HTML...', 'info');
             
             const result = await window.electronAPI.exportHTML(data);
             
             if (result.success) {
-                this.updateStatus(`✅ HTML esportato: ${result.path}`, 'success');
+                this.updateStatus(`✅ HTML exported: ${result.path}`, 'success');
                 
                 setTimeout(() => {
-                    if (confirm('HTML creato con successo! Vuoi aprire la cartella contenente il file?')) {
+                    if (confirm('HTML created successfully! Open containing folder?')) {
                         this.showInFolder(result.path);
                     }
                 }, 500);
             } else {
-                this.updateStatus(`❌ Errore HTML: ${result.error}`, 'danger');
-                console.error('Errore HTML:', result.error);
+                this.updateStatus(`❌ HTML Error: ${result.error}`, 'danger');
+                console.error('HTML Error:', result.error);
             }
         } catch (error) {
-            this.updateStatus(`❌ Errore durante l'esportazione HTML: ${error.message}`, 'danger');
-            console.error('Errore exportHTML:', error);
+            this.updateStatus(`❌ HTML export error: ${error.message}`, 'danger');
+            console.error('exportHTML error:', error);
         }
     }
 
+    /**
+     * Shows the file in system folder (simulated)
+     * @param {string} filePath - Path to the file
+     */
     showInFolder(filePath) {
-        // In Electron potresti usare: require('electron').shell.showItemInFolder(filePath)
-        console.log('File salvato in:', filePath);
-        alert(`File salvato in:\n${filePath}`);
+        // In Electron you might use: require('electron').shell.showItemInFolder(filePath)
+        console.log('File saved at:', filePath);
+        alert(`File saved at:\n${filePath}`);
     }
     
-    // Pulisce l'equazione per il PDF
-
+    /**
+     * Cleans mathematical equations for PDF export
+     * Preserves Unicode mathematical symbols while removing HTML tags
+     * @param {string} equation - The equation to clean
+     * @returns {string} Cleaned equation ready for PDF export
+     */
     cleanEquationForPDF(equation) {
         console.log('=== DEBUG CLEAN EQUATION ===');
-        console.log('Equazione originale:', equation);
-        console.log('CharCodes originali:', Array.from(equation).map(c => `${c}: ${c.charCodeAt(0)}`));
+        console.log('Original equation:', equation);
+        console.log('Original char codes:', Array.from(equation).map(c => `${c}: ${c.charCodeAt(0)}`));
         
-        // PRIMA di qualsiasi pulizia, preserva i simboli matematici Unicode
-        // Mappa dei simboli matematici da preservare
+        // Map of mathematical symbols to preserve
         const mathSymbols = {
             '∑': '∑',
             '∫': '∫', 
@@ -208,22 +251,23 @@ lim t→∞ (1 + 1/t)^t = e
             'ω': 'ω'
         };
         
-        let preserved = equation;
-        
-          // Rimuovi SOLO i tag HTML se presenti
-    let cleaned = equation
-    .replace(/<[^>]*>/g, '') // Rimuovi tag HTML
-    .replace(/&nbsp;/g, ' ') // Sostituisci spazi non-breaking
-    .replace(/\s+/g, ' ') // Normalizza spazi multipli
-    .trim();
+        // Remove ONLY HTML tags if present
+        let cleaned = equation
+            .replace(/<[^>]*>/g, '') // Remove HTML tags
+            .replace(/&nbsp;/g, ' ') // Replace non-breaking spaces
+            .replace(/\s+/g, ' ') // Normalize multiple spaces
+            .trim();
 
-console.log('Equazione finale pulita:', cleaned);
+        console.log('Final cleaned equation:', cleaned);
 
-return cleaned; // Restituisci l'equazione originale preservata
+        return cleaned; // Return the original equation with symbols preserved
     }
     
  
 
+    /**
+     * Sets up the color picker functionality for variable coloring
+     */
     setupColorPicker() {
         const colorOptions = document.querySelectorAll('.color-option');
         
@@ -241,6 +285,9 @@ return cleaned; // Restituisci l'equazione originale preservata
         }
     }
 
+    /**
+     * Parses variables from the variables editor and updates internal state
+     */
     parseVariables() {
         const content = document.getElementById('variablesEditor').value;
         this.variables = {};
@@ -266,6 +313,9 @@ return cleaned; // Restituisci l'equazione originale preservata
         this.updateVariablesList();
     }
 
+    /**
+     * Updates the variables list display in the UI
+     */
     updateVariablesList() {
         const list = document.getElementById('variablesList');
         
@@ -273,7 +323,7 @@ return cleaned; // Restituisci l'equazione originale preservata
             list.innerHTML = `
                 <div class="empty-state">
                     <span>📝</span>
-                    <p>Nessuna variabile definita</p>
+                    <p>No variables defined</p>
                 </div>
             `;
             return;
@@ -291,7 +341,7 @@ return cleaned; // Restituisci l'equazione originale preservata
                     <span class="variable-name">${name}</span>
                     <button class="color-picker-btn" style="background: ${color};" 
                             onclick="mathEditor.openColorPicker('${name}')"
-                            title="Cambia colore"></button>
+                            title="Change color"></button>
                 </div>
                 <div class="variable-description">${description}</div>
             `;
@@ -299,7 +349,10 @@ return cleaned; // Restituisci l'equazione originale preservata
         }
     }
 
-    // METODO PRINCIPALE RIVISTO - SEMPLICE E FUNZIONANTE
+    /**
+     * MAIN REVISED METHOD - SIMPLE AND FUNCTIONAL
+     * Updates the mathematical preview based on current content and mode
+     */
     updateMathPreview() {
         const content = document.getElementById('functionEditor').value;
         const preview = document.getElementById('mathPreview');
@@ -308,8 +361,8 @@ return cleaned; // Restituisci l'equazione originale preservata
             preview.innerHTML = `
                 <div class="preview-placeholder">
                     <span class="placeholder-icon">🔍</span>
-                    <p>L'anteprima delle tue funzioni apparirà qui</p>
-                    <small>Usa "🎨 Color" per anteprima colorata o "📐 Math" per rendering matematico</small>
+                    <p>Your function preview will appear here</p>
+                    <small>Use "🎨 Color" for colored preview or "📐 Math" for mathematical rendering</small>
                 </div>
             `;
             return;
@@ -322,7 +375,10 @@ return cleaned; // Restituisci l'equazione originale preservata
         }
     }
 
-    // ANTEPRIMA COLORATA HTML - FUNZIONA SICURAMENTE
+    /**
+     * COLORED HTML PREVIEW - GUARANTEED TO WORK
+     * Renders mathematical expressions with colored variable highlighting
+     */
     updateColoredPreview() {
         const content = document.getElementById('functionEditor').value;
         const preview = document.getElementById('mathPreview');
@@ -333,7 +389,7 @@ return cleaned; // Restituisci l'equazione originale preservata
         equations.forEach((equation, index) => {
             let coloredEquation = this.escapeHtml(equation);
             
-            // Sostituisci TUTTE le variabili con span colorati
+            // Replace ALL variables with colored spans
             Object.keys(this.variables).forEach(variable => {
                 const color = this.variableColors[variable];
                 const regex = new RegExp(`\\b${this.escapeRegex(variable)}\\b`, 'g');
@@ -346,7 +402,7 @@ return cleaned; // Restituisci l'equazione originale preservata
                 );
             });
             
-            // Sostituisci simboli matematici con versioni stilizzate
+            // Replace mathematical symbols with styled versions
             coloredEquation = this.formatMathematicalSymbols(coloredEquation);
             
             html += `
@@ -362,10 +418,13 @@ return cleaned; // Restituisci l'equazione originale preservata
         
         preview.innerHTML = html;
         this.addPreviewTooltipListeners();
-        this.updateStatus('Anteprima colorata attiva - I colori sono visibili!', 'success');
+        this.updateStatus('Colored preview active - Colors are visible!', 'success');
     }
 
-    // ANTEPRIMA MATHJAX (senza colori)
+    /**
+     * MATHJAX PREVIEW (without colors)
+     * Renders mathematical expressions using MathJax for professional typesetting
+     */
     updateMathJaxPreview() {
         const content = document.getElementById('functionEditor').value;
         const preview = document.getElementById('mathPreview');
@@ -383,20 +442,25 @@ return cleaned; // Restituisci l'equazione originale preservata
         preview.innerHTML = mathContent;
         
         MathJax.typesetPromise([preview]).then(() => {
-            this.updateStatus('Anteprima MathJax attiva - Rendering matematico', 'info');
+            this.updateStatus('MathJax preview active - Mathematical rendering', 'info');
         });
     }
 
-    // FORMATTAZIONE SIMBOLI MATEMATICI
+    /**
+     * MATHEMATICAL SYMBOLS FORMATTING
+     * Enhances mathematical symbols with special styling and tooltips
+     * @param {string} text - Text containing mathematical symbols
+     * @returns {string} Text with formatted mathematical symbols
+     */
     formatMathematicalSymbols(text) {
         const symbolMap = {
-            '∑': '<span class="math-symbol sum" title="Sommatoria">∑</span>',
-            '∫': '<span class="math-symbol integral" title="Integrale">∫</span>',
-            '∂': '<span class="math-symbol partial" title="Derivata parziale">∂</span>',
+            '∑': '<span class="math-symbol sum" title="Summation">∑</span>',
+            '∫': '<span class="math-symbol integral" title="Integral">∫</span>',
+            '∂': '<span class="math-symbol partial" title="Partial derivative">∂</span>',
             '∇': '<span class="math-symbol nabla" title="Nabla">∇</span>',
-            '√': '<span class="math-symbol sqrt" title="Radice quadrata">√</span>',
-            '∞': '<span class="math-symbol infinity" title="Infinito">∞</span>',
-            'π': '<span class="math-symbol pi" title="Pi greco">π</span>',
+            '√': '<span class="math-symbol sqrt" title="Square root">√</span>',
+            '∞': '<span class="math-symbol infinity" title="Infinity">∞</span>',
+            'π': '<span class="math-symbol pi" title="Pi">π</span>',
             'θ': '<span class="math-symbol theta" title="Theta">θ</span>',
             'α': '<span class="math-symbol alpha" title="Alpha">α</span>',
             'β': '<span class="math-symbol beta" title="Beta">β</span>',
@@ -408,33 +472,33 @@ return cleaned; // Restituisci l'equazione originale preservata
             'σ': '<span class="math-symbol sigma" title="Sigma">σ</span>',
             'φ': '<span class="math-symbol phi" title="Phi">φ</span>',
             'ω': '<span class="math-symbol omega" title="Omega">ω</span>',
-            '→': '<span class="math-symbol arrow" title="Freccia destra">→</span>',
-            '←': '<span class="math-symbol arrow-left" title="Freccia sinistra">←</span>',
-            '↔': '<span class="math-symbol arrow-both" title="Freccia bidirezionale">↔</span>',
-            '±': '<span class="math-symbol plusminus" title="Più/Meno">±</span>',
-            '∓': '<span class="math-symbol minusplus" title="Meno/Più">∓</span>',
-            '≠': '<span class="math-symbol notequal" title="Diverso">≠</span>',
-            '≡': '<span class="math-symbol equivalent" title="Equivalente">≡</span>',
-            '≈': '<span class="math-symbol approx" title="Circa uguale">≈</span>',
-            '≤': '<span class="math-symbol lessequal" title="Minore o uguale">≤</span>',
-            '≥': '<span class="math-symbol greaterequal" title="Maggiore o uguale">≥</span>',
-            '≪': '<span class="math-symbol muchless" title="Molto minore">≪</span>',
-            '≫': '<span class="math-symbol muchgreater" title="Molto maggiore">≫</span>',
-            '∈': '<span class="math-symbol in" title="Appartiene">∈</span>',
-            '∉': '<span class="math-symbol notin" title="Non appartiene">∉</span>',
-            '⊂': '<span class="math-symbol subset" title="Sottoinsieme">⊂</span>',
-            '⊆': '<span class="math-symbol subseteq" title="Sottoinsieme o uguale">⊆</span>',
-            '∩': '<span class="math-symbol intersection" title="Intersezione">∩</span>',
-            '∪': '<span class="math-symbol union" title="Unione">∪</span>',
-            '∀': '<span class="math-symbol forall" title="Per ogni">∀</span>',
-            '∃': '<span class="math-symbol exists" title="Esiste">∃</span>',
-            '∄': '<span class="math-symbol notexists" title="Non esiste">∄</span>',
-            '⇒': '<span class="math-symbol implies" title="Implica">⇒</span>',
-            '⇔': '<span class="math-symbol iff" title="Se e solo se">⇔</span>',
-            '×': '<span class="math-symbol times" title="Prodotto vettoriale">×</span>',
-            '÷': '<span class="math-symbol divide" title="Divisione">÷</span>',
-            '⋅': '<span class="math-symbol cdot" title="Prodotto scalare">⋅</span>',
-            '∘': '<span class="math-symbol circ" title="Composizione">∘</span>'
+            '→': '<span class="math-symbol arrow" title="Right arrow">→</span>',
+            '←': '<span class="math-symbol arrow-left" title="Left arrow">←</span>',
+            '↔': '<span class="math-symbol arrow-both" title="Bidirectional arrow">↔</span>',
+            '±': '<span class="math-symbol plusminus" title="Plus/Minus">±</span>',
+            '∓': '<span class="math-symbol minusplus" title="Minus/Plus">∓</span>',
+            '≠': '<span class="math-symbol notequal" title="Not equal">≠</span>',
+            '≡': '<span class="math-symbol equivalent" title="Equivalent">≡</span>',
+            '≈': '<span class="math-symbol approx" title="Approximately equal">≈</span>',
+            '≤': '<span class="math-symbol lessequal" title="Less than or equal">≤</span>',
+            '≥': '<span class="math-symbol greaterequal" title="Greater than or equal">≥</span>',
+            '≪': '<span class="math-symbol muchless" title="Much less than">≪</span>',
+            '≫': '<span class="math-symbol muchgreater" title="Much greater than">≫</span>',
+            '∈': '<span class="math-symbol in" title="Element of">∈</span>',
+            '∉': '<span class="math-symbol notin" title="Not element of">∉</span>',
+            '⊂': '<span class="math-symbol subset" title="Subset">⊂</span>',
+            '⊆': '<span class="math-symbol subseteq" title="Subset or equal">⊆</span>',
+            '∩': '<span class="math-symbol intersection" title="Intersection">∩</span>',
+            '∪': '<span class="math-symbol union" title="Union">∪</span>',
+            '∀': '<span class="math-symbol forall" title="For all">∀</span>',
+            '∃': '<span class="math-symbol exists" title="Exists">∃</span>',
+            '∄': '<span class="math-symbol notexists" title="Does not exist">∄</span>',
+            '⇒': '<span class="math-symbol implies" title="Implies">⇒</span>',
+            '⇔': '<span class="math-symbol iff" title="If and only if">⇔</span>',
+            '×': '<span class="math-symbol times" title="Vector product">×</span>',
+            '÷': '<span class="math-symbol divide" title="Division">÷</span>',
+            '⋅': '<span class="math-symbol cdot" title="Scalar product">⋅</span>',
+            '∘': '<span class="math-symbol circ" title="Composition">∘</span>'
         };
         
         Object.keys(symbolMap).forEach(symbol => {
@@ -445,35 +509,55 @@ return cleaned; // Restituisci l'equazione originale preservata
         return text;
     }
 
-    // FUNZIONI DI SUPPORTO
+    // HELPER FUNCTIONS
+    /**
+     * Escapes HTML special characters to prevent XSS
+     * @param {string} text - Text to escape
+     * @returns {string} Escaped HTML text
+     */
     escapeHtml(text) {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
     }
 
+    /**
+     * Escapes special regex characters
+     * @param {string} string - String to escape
+     * @returns {string} Regex-escaped string
+     */
     escapeRegex(string) {
         return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
 
+    /**
+     * Splits content into separate equations based on empty lines
+     * @param {string} content - Mathematical content
+     * @returns {string[]} Array of individual equations
+     */
     splitIntoEquations(content) {
         return content.split(/\n\s*\n/).filter(block => block.trim());
     }
 
-
+    /**
+     * Converts mathematical expressions to MathJax format
+     * Handles Unicode symbols and special mathematical notation
+     * @param {string} content - Mathematical content to convert
+     * @returns {string} MathJax formatted content
+     */
     convertToMathJax(content) {
-        // Decodifica simboli corrotti prima di tutto
+        // Decode corrupted symbols first
         content = this.decodeBrokenMathSymbols(content);
     
         const symbolMap = {
-            // Simboli matematici
-            8721: '\\sum',        // SOMMA
-            8734: '\\infty',      // INFINITO
-            8706: '\\partial',    // DERIVATA
-            8747: '\\int',        // INTEGRALE
-            8730: '\\sqrt{}',     // RADICE
+            // Mathematical symbols
+            8721: '\\sum',        // SUMMATION
+            8734: '\\infty',      // INFINITY
+            8706: '\\partial',    // PARTIAL DERIVATIVE
+            8747: '\\int',        // INTEGRAL
+            8730: '\\sqrt{}',     // SQUARE ROOT
             
-            // Lettere greche maiuscole
+            // Uppercase Greek letters
             913: 'A',             // Alpha
             914: 'B',             // Beta  
             915: '\\Gamma',       // Gamma
@@ -499,7 +583,7 @@ return cleaned; // Restituisci l'equazione originale preservata
             936: '\\Psi',         // Psi
             937: '\\Omega',       // Omega
             
-            // Lettere greche minuscole
+            // Lowercase Greek letters
             945: '\\alpha',       // alpha
             946: '\\beta',        // beta
             947: '\\gamma',       // gamma
@@ -517,7 +601,7 @@ return cleaned; // Restituisci l'equazione originale preservata
             959: 'o',             // omicron
             960: '\\pi',          // pi
             961: '\\rho',         // rho
-            962: '\\varsigma',    // sigma finale
+            962: '\\varsigma',    // final sigma
             963: '\\sigma',       // sigma
             964: '\\tau',         // tau
             965: '\\upsilon',     // upsilon
@@ -526,57 +610,62 @@ return cleaned; // Restituisci l'equazione originale preservata
             968: '\\psi',         // psi
             969: '\\omega',       // omega
             
-            // Altri simboli matematici
-            8594: '\\rightarrow', // freccia destra
-            177: '\\pm',          // più/meno
-            8800: '\\neq',        // diverso
-            8804: '\\leq',        // minore/uguale
-            8805: '\\geq',        // maggiore/uguale
-            8712: '\\in',         // appartiene
-            8704: '\\forall',     // per ogni
-            8707: '\\exists',     // esiste
-            215: '\\times',       // prodotto
-            247: '\\div',         // divisione
-            8729: '\\cdot',       // prodotto scalare
-            8728: '\\circ',       // composizione
-            8745: '\\cap',        // intersezione
-            8746: '\\cup',        // unione
-            8834: '\\subset',     // sottoinsieme
-            8838: '\\subseteq',   // sottoinsieme/uguale
-            8658: '\\Rightarrow', // implica
-            8660: '\\Leftrightarrow' // se e solo se
+            // Other mathematical symbols
+            8594: '\\rightarrow', // right arrow
+            177: '\\pm',          // plus/minus
+            8800: '\\neq',        // not equal
+            8804: '\\leq',        // less than or equal
+            8805: '\\geq',        // greater than or equal
+            8712: '\\in',         // element of
+            8704: '\\forall',     // for all
+            8707: '\\exists',     // exists
+            215: '\\times',       // multiplication
+            247: '\\div',         // division
+            8729: '\\cdot',       // dot product
+            8728: '\\circ',       // composition
+            8745: '\\cap',        // intersection
+            8746: '\\cup',        // union
+            8834: '\\subset',     // subset
+            8838: '\\subseteq',   // subset or equal
+            8658: '\\Rightarrow', // implies
+            8660: '\\Leftrightarrow' // if and only if
         };
     
         let result = content;
         
-        // Sostituisci tutti i simboli
+        // Replace all symbols
         Object.keys(symbolMap).forEach(symbol => {
             const regex = new RegExp(this.escapeRegex(symbol), 'g');
             result = result.replace(regex, symbolMap[symbol]);
         });
     
-        // Gestione speciale per radici
+        // Special handling for roots
         result = result.replace(/√(.+?)(?=[\s\)\]\}])/g, '\\sqrt{$1}');
         
-        // Gestione speciale per limiti
+        // Special handling for limits
         result = result.replace(/lim\s+(\w+)→(\w+)\s+(.+)/g, '\\lim_{$1 \\to $2} $3');
         
-        // Gestione speciale per derivate
+        // Special handling for derivatives
         result = result.replace(/(\w+)'(\w*)/g, '\\frac{d$1}{d$2}');
     
         return result;
     }
     
+    /**
+     * Decodes corrupted mathematical symbols that may occur during text processing
+     * @param {string} content - Content with potentially corrupted symbols
+     * @returns {string} Content with corrected symbols
+     */
     decodeBrokenMathSymbols(content) {
         const replacements = {
-            '': '∑',  // Sommatoria
-            '': '→',  // Freccia
-            '!': '∞',  // Infinito (alcuni editor lo perdono così)
-            '"': '∫',  // Integrale o carattere di controllo
-            '+from': '∫ from', // correzione per integrali scritti male
-            '/"': '∂', // Derivata parziale
-            '"y': '∂y', // Derivata y
-            '"t': '∂t'  // Derivata t
+            '': '∑',  // Summation
+            '': '→',  // Arrow
+            '!': '∞',  // Infinity (some editors corrupt it this way)
+            '"': '∫',  // Integral or control character
+            '+from': '∫ from', // Fix for poorly written integrals
+            '/"': '∂', // Partial derivative
+            '"y': '∂y', // Partial y
+            '"t': '∂t'  // Partial t
         };
     
         for (const [bad, good] of Object.entries(replacements)) {
@@ -587,7 +676,10 @@ return cleaned; // Restituisci l'equazione originale preservata
     }
     
 
-    // TOOLTIP E INTERAZIONI
+    // TOOLTIP AND INTERACTIONS
+    /**
+     * Adds tooltip event listeners to preview elements
+     */
     addPreviewTooltipListeners() {
         const variableElements = document.querySelectorAll('.variable-preview');
         
@@ -614,6 +706,10 @@ return cleaned; // Restituisci l'equazione originale preservata
         });
     }
 
+    /**
+     * Handles hover events on math preview elements
+     * @param {Event} e - Mouse event
+     */
     handleMathPreviewHover(e) {
         const target = e.target;
         
@@ -628,6 +724,12 @@ return cleaned; // Restituisci l'equazione originale preservata
         }
     }
 
+    /**
+     * Shows tooltip for mathematical elements with variable information
+     * @param {Event} e - Mouse event
+     * @param {string} variable - Variable name
+     * @param {string} description - Variable description
+     */
     showMathElementTooltip(e, variable, description) {
         const tooltip = document.getElementById('tooltip');
         const color = this.variableColors[variable] || '#3498DB';
@@ -644,17 +746,25 @@ return cleaned; // Restituisci l'equazione originale preservata
         tooltip.classList.add('show');
     }
 
+    /**
+     * Shows general preview tooltip with mode information
+     * @param {Event} e - Mouse event
+     */
     showPreviewTooltip(e) {
         const tooltip = document.getElementById('tooltip');
-        const mode = this.useMathJax ? 'MathJax' : 'Colorata';
+        const mode = this.useMathJax ? 'MathJax' : 'Colored';
         tooltip.innerHTML = `
-            <strong>🔍 Anteprima ${mode}</strong><br>
-            <small>${this.useMathJax ? 'Rendering matematico avanzato' : 'Variabili colorate - Passa il mouse per i dettagli'}</small>
+            <strong>🔍 ${mode} Preview</strong><br>
+            <small>${this.useMathJax ? 'Advanced mathematical rendering' : 'Colored variables - Hover for details'}</small>
         `;
         this.moveTooltip(e);
         tooltip.classList.add('show');
     }
 
+    /**
+     * Handles variable hover events in the function editor
+     * @param {Event} e - Mouse event
+     */
     handleVariableHover(e) {
         const editor = document.getElementById('functionEditor');
         const text = editor.value;
@@ -668,6 +778,12 @@ return cleaned; // Restituisci l'equazione originale preservata
         }
     }
 
+    /**
+     * Gets cursor position in the editor relative to text content
+     * @param {HTMLElement} editor - Editor element
+     * @param {Event} e - Mouse event
+     * @returns {Object} Cursor position with line and column
+     */
     getCursorPosition(editor, e) {
         const rect = editor.getBoundingClientRect();
         const x = e.clientX - rect.left;
@@ -679,6 +795,12 @@ return cleaned; // Restituisci l'equazione originale preservata
         };
     }
 
+    /**
+     * Gets the word at a specific position in the text
+     * @param {string} text - Text content
+     * @param {Object} position - Position object with line and column
+     * @returns {string|null} The word at position or null
+     */
     getWordAt(text, position) {
         const lines = text.split('\n');
         if (position.line >= lines.length) return null;
@@ -690,6 +812,12 @@ return cleaned; // Restituisci l'equazione originale preservata
         }) : null;
     }
 
+    /**
+     * Shows tooltip for variables in the editor
+     * @param {Event} e - Mouse event
+     * @param {string} variable - Variable name
+     * @param {string} description - Variable description
+     */
     showVariableTooltip(e, variable, description) {
         const tooltip = document.getElementById('tooltip');
         const color = this.variableColors[variable] || '#3498DB';
@@ -706,31 +834,48 @@ return cleaned; // Restituisci l'equazione originale preservata
         tooltip.classList.add('show');
     }
 
+    /**
+     * Moves tooltip to follow mouse position
+     * @param {Event} e - Mouse event
+     */
     moveTooltip(e) {
         const tooltip = document.getElementById('tooltip');
         tooltip.style.left = (e.pageX + 15) + 'px';
         tooltip.style.top = (e.pageY + 15) + 'px';
     }
 
+    /**
+     * Hides the currently displayed tooltip
+     */
     hideTooltip() {
         const tooltip = document.getElementById('tooltip');
         tooltip.classList.remove('show');
     }
 
-    // CONTROLLI ANTEPRIMA
+    // PREVIEW CONTROLS
+    /**
+     * Enables colored HTML preview mode
+     */
     enableColoredPreview() {
         this.useMathJax = false;
         this.updateMathPreview();
-        this.updateStatus('🎨 Anteprima COLORATA attiva - I colori sono visibili!', 'success');
+        this.updateStatus('🎨 COLORED Preview active - Colors are visible!', 'success');
     }
 
+    /**
+     * Enables MathJax mathematical rendering mode
+     */
     enableMathJaxPreview() {
         this.useMathJax = true;
         this.updateMathPreview();
-        this.updateStatus('📐 Anteprima MATHJAX attiva - Rendering matematico', 'info');
+        this.updateStatus('📐 MATHJAX Preview active - Mathematical rendering', 'info');
     }
 
     // COLOR PICKER
+    /**
+     * Opens color picker modal for a specific variable
+     * @param {string} variableName - Name of variable to color
+     */
     openColorPicker(variableName) {
         this.currentColorPickerVariable = variableName;
         const modal = document.getElementById('colorPickerModal');
@@ -749,22 +894,32 @@ return cleaned; // Restituisci l'equazione originale preservata
         modal.style.display = 'flex';
     }
 
+    /**
+     * Closes the color picker modal
+     */
     closeColorPicker() {
         document.getElementById('colorPickerModal').style.display = 'none';
         this.currentColorPickerVariable = null;
     }
 
+    /**
+     * Confirms color selection and applies it to the variable
+     */
     confirmColor() {
         if (this.currentColorPickerVariable && this.selectedColor) {
             this.variableColors[this.currentColorPickerVariable] = this.selectedColor;
             this.updateVariablesList();
             this.updateMathPreview();
             this.closeColorPicker();
-            this.updateStatus(`Colore aggiornato per ${this.currentColorPickerVariable}`, 'success');
+            this.updateStatus(`Color updated for ${this.currentColorPickerVariable}`, 'success');
         }
     }
 
     // EDITOR FUNCTIONS
+    /**
+     * Inserts a mathematical symbol at cursor position
+     * @param {string} symbol - Symbol to insert
+     */
     insertSymbol(symbol) {
         const editor = document.getElementById('functionEditor');
         const start = editor.selectionStart;
@@ -776,14 +931,21 @@ return cleaned; // Restituisci l'equazione originale preservata
         editor.focus();
         
         this.updateMathPreview();
-        this.updateStatus(`Simbolo ${symbol} inserito`, 'info');
+        this.updateStatus(`Symbol ${symbol} inserted`, 'info');
     }
 
+    /**
+     * Inserts a new line for creating separate equations
+     */
     insertNewLine() {
         this.insertTextAtCursor('\n\n');
-        this.updateStatus('Nuova equazione aggiunta', 'info');
+        this.updateStatus('New equation added', 'info');
     }
 
+    /**
+     * Inserts text at current cursor position
+     * @param {string} text - Text to insert
+     */
     insertTextAtCursor(text) {
         const editor = document.getElementById('functionEditor');
         const start = editor.selectionStart;
@@ -798,6 +960,10 @@ return cleaned; // Restituisci l'equazione originale preservata
     }
 
     // FILE OPERATIONS
+    /**
+     * Saves the current file
+     * @param {boolean} saveAs - Whether to force "Save As" dialog
+     */
     async saveFile(saveAs = false) {
         const variablesContent = document.getElementById('variablesEditor').value;
         const functionContent = document.getElementById('functionEditor').value;
@@ -814,38 +980,44 @@ return cleaned; // Restituisci l'equazione originale preservata
         
         if (result.success) {
             this.currentFilePath = result.path;
-            this.updateStatus(`File salvato: ${result.path}`, 'success');
+            this.updateStatus(`File saved: ${result.path}`, 'success');
         } else if (result.error) {
-            this.updateStatus(`Errore salvataggio: ${result.error}`, 'danger');
+            this.updateStatus(`Save error: ${result.error}`, 'danger');
         }
     }
 
- // AGGIUNGI questa nuova funzione per preparare i dati PDF
-prepareDataForPDF() {
-    const variablesContent = document.getElementById('variablesEditor').value;
-    const functionContent = document.getElementById('functionEditor').value;
-    
-    this.parseVariables();
-    
-    const equations = this.splitIntoEquations(functionContent)
-        .map(eq => this.cleanEquationForPDF(eq))
-        .filter(eq => eq.trim().length > 0);
-    
-    // DEBUG: verifica i caratteri Unicode
-    equations.forEach((eq, index) => {
-        console.log(`Equazione ${index + 1} per PDF:`, eq);
-        console.log(`Caratteri Unicode:`, Array.from(eq).map(c => 
-            `${c} (U+${c.charCodeAt(0).toString(16).toUpperCase()})`
-        ));
-    });
-    
-    return {
-        variables: this.variables || {},
-        variableColors: this.variableColors || {},
-        functions: equations
-    };
-}
+    /**
+     * Prepares data for PDF export by cleaning equations and organizing content
+     * @returns {Object} Structured data for PDF generation
+     */
+    prepareDataForPDF() {
+        const variablesContent = document.getElementById('variablesEditor').value;
+        const functionContent = document.getElementById('functionEditor').value;
+        
+        this.parseVariables();
+        
+        const equations = this.splitIntoEquations(functionContent)
+            .map(eq => this.cleanEquationForPDF(eq))
+            .filter(eq => eq.trim().length > 0);
+        
+        // DEBUG: verify Unicode characters
+        equations.forEach((eq, index) => {
+            console.log(`Equation ${index + 1} for PDF:`, eq);
+            console.log(`Unicode characters:`, Array.from(eq).map(c => 
+                `${c} (U+${c.charCodeAt(0).toString(16).toUpperCase()})`
+            ));
+        });
+        
+        return {
+            variables: this.variables || {},
+            variableColors: this.variableColors || {},
+            functions: equations
+        };
+    }
 
+    /**
+     * Exports content to HTML format (alternative implementation)
+     */
     async exportHTML() {
         const functionContent = document.getElementById('functionEditor').value;
         const equations = this.splitIntoEquations(functionContent).map(eq => 
@@ -860,18 +1032,24 @@ prepareDataForPDF() {
         const result = await window.electronAPI.exportHTML(data);
         
         if (result.success) {
-            this.updateStatus(`HTML esportato: ${result.path}`, 'success');
+            this.updateStatus(`HTML exported: ${result.path}`, 'success');
         } else if (result.error) {
-            this.updateStatus(`Errore HTML: ${result.error}`, 'danger');
+            this.updateStatus(`HTML Error: ${result.error}`, 'danger');
         }
     }
 
+    /**
+     * Clears the function editor content
+     */
     clearEditor() {
         document.getElementById('functionEditor').value = '';
         this.updateMathPreview();
-        this.updateStatus('Editor pulito', 'warning');
+        this.updateStatus('Editor cleared', 'warning');
     }
     
+    /**
+     * Formats the mathematical code for better readability
+     */
     formatCode() {
         const editor = document.getElementById('functionEditor');
         let content = editor.value;
@@ -882,26 +1060,34 @@ prepareDataForPDF() {
         
         editor.value = content;
         this.updateMathPreview();
-        this.updateStatus('Codice formattato', 'success');
+        this.updateStatus('Code formatted', 'success');
     }
 
+    /**
+     * Displays help information for using the MathEditor
+     */
     showHelp() {
-        alert(`🎯 COME USARE MATH EDITOR:
+        alert(`🎯 HOW TO USE MATH EDITOR:
 
-• VARIABILI: "x = velocità" nella sezione sinistra
-• FUNZIONI: Scrivi nella sezione destra  
-• A CAPO: Righe vuote separano equazioni diverse
-• CTRL+ENTER: Inserisce rapidamente riga vuota
-• COLORI: Clicca sui cerchi per cambiare colore
-• 🎨 COLOR: Anteprima con variabili COLORATE
-• 📐 MATH: Anteprima con rendering matematico
-• TOOLTIP: Mouse sulle variabili per dettagli
-• ESPORTA: Usa il menu File per PDF/HTML
-• SALVA: Ctrl+S per salvare il progetto
+• VARIABLES: "x = speed" in left section
+• FUNCTIONS: Write in right section  
+• NEW LINES: Empty lines separate different equations
+• CTRL+ENTER: Quickly inserts empty line
+• COLORS: Click circles to change color
+• 🎨 COLOR: Preview with COLORED variables
+• 📐 MATH: Preview with mathematical rendering
+• TOOLTIP: Hover over variables for details
+• EXPORT: Use File menu for PDF/HTML
+• SAVE: Ctrl+S to save project
 
-✅ I COLORI NELL'ANTEPRIMA ORA FUNZIONANO!`);
+✅ COLORS IN PREVIEW NOW WORK!`);
     }
 
+    /**
+     * Updates the status indicator with message and type
+     * @param {string} message - Status message
+     * @param {string} type - Message type (success, warning, danger, info)
+     */
     updateStatus(message, type = 'info') {
         const statusText = document.getElementById('statusText');
         const indicator = document.getElementById('statusIndicator');
@@ -918,23 +1104,29 @@ prepareDataForPDF() {
         indicator.style.background = colors[type] || colors.info;
     }
 
+    /**
+     * Sets up menu event handlers for Electron integration
+     */
     setupMenuHandlers() {
         window.electronAPI.onMenuNewFile(() => this.newFile());
         window.electronAPI.onMenuOpenFile((event, content, filePath) => this.openFile(content, filePath));
         window.electronAPI.onMenuSaveFile(() => this.saveFile());
         window.electronAPI.onMenuSaveAsFile(() => this.saveFile(true));
         window.electronAPI.onMenuExportPDF(() => {
-            console.log('Menu Export PDF chiamato');
+            console.log('Menu Export PDF called');
             this.exportPDF();
         });
         window.electronAPI.onMenuExportHTML(() => {
-            console.log('Menu Export HTML chiamato');
+            console.log('Menu Export HTML called');
             this.exportHTML();
         });
     }
 
+    /**
+     * Creates a new file, clearing current content after confirmation
+     */
     async newFile() {
-        if (confirm('Vuoi creare un nuovo file? Le modifiche non salvate andranno perse.')) {
+        if (confirm('Create new file? Unsaved changes will be lost.')) {
             document.getElementById('variablesEditor').value = '';
             document.getElementById('functionEditor').value = '';
             this.currentFilePath = null;
@@ -942,13 +1134,18 @@ prepareDataForPDF() {
             this.variableColors = {};
             this.updateVariablesList();
             this.updateMathPreview();
-            this.updateStatus('Nuovo file creato', 'success');
+            this.updateStatus('New file created', 'success');
         }
     }
 
+    /**
+     * Opens a file with provided content and path
+     * @param {string} content - File content
+     * @param {string} filePath - Path to the file
+     */
     openFile(content, filePath) {
         try {
-            console.log('Tentativo di aprire file:', filePath);
+            console.log('Attempting to open file:', filePath);
             const data = JSON.parse(content);
             
             document.getElementById('variablesEditor').value = data.variables || '';
@@ -958,38 +1155,46 @@ prepareDataForPDF() {
             
             this.parseVariables();
             this.updateMathPreview();
-            this.updateStatus(`File aperto: ${filePath}`, 'success');
+            this.updateStatus(`File opened: ${filePath}`, 'success');
             
-            console.log('File caricato correttamente');
+            console.log('File loaded successfully');
         } catch (error) {
-            console.error('Errore parsing JSON, apro come testo semplice:', error);
-            // Fallback: apri come testo semplice
+            console.error('JSON parsing error, opening as plain text:', error);
+            // Fallback: open as plain text
             document.getElementById('functionEditor').value = content;
             document.getElementById('variablesEditor').value = '';
             this.currentFilePath = filePath;
             this.parseVariables();
             this.updateMathPreview();
-            this.updateStatus(`File aperto (testo): ${filePath}`, 'success');
+            this.updateStatus(`File opened (text): ${filePath}`, 'success');
         }
     }
 }
 
-// INIZIALIZZAZIONE
+// INITIALIZATION
 document.addEventListener('DOMContentLoaded', () => {
     window.mathEditor = new MathEditor();
 });
 
-// FUNZIONI GLOBALI
+// GLOBAL FUNCTIONS
+/**
+ * Global function to insert mathematical symbols
+ * @param {string} symbol - Symbol to insert
+ */
 function insertSymbol(symbol) {
     window.mathEditor.insertSymbol(symbol);
 }
 
+/**
+ * Global function to enable colored preview mode
+ */
 function enableColoredPreview() {
     window.mathEditor.enableColoredPreview();
 }
 
+/**
+ * Global function to enable MathJax preview mode
+ */
 function enableMathJaxPreview() {
     window.mathEditor.enableMathJaxPreview();
 }
-
-
