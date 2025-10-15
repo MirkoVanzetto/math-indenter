@@ -1,7 +1,10 @@
 const { app, BrowserWindow, Menu, dialog, ipcMain } = require('electron');
 const path = require('path');
 const fs = require('fs');
-//const PDFDocument = require('pdfkit');
+const PDFDocument = require('pdfkit');
+
+
+
 
 let mainWindow;
 
@@ -96,12 +99,284 @@ function createMenu() {
         { role: 'paste', label: 'Incolla' },
         { role: 'selectall', label: 'Seleziona tutto' }
       ]
-    }
+    },{
+      label: 'Visualizza',
+      submenu: [
+          { role: 'reload', label: 'Ricarica' },
+          { role: 'forceReload', label: 'Forza Ricarica' },
+          { role: 'toggleDevTools', label: 'DevTools' },
+          { type: 'separator' },
+          { role: 'resetZoom', label: 'Zoom Normale' },
+          { role: 'zoomIn', label: 'Zoom Avanti' },
+          { role: 'zoomOut', label: 'Zoom Indietro' },
+          { type: 'separator' },
+          { role: 'togglefullscreen', label: 'Schermo Intero' }
+      ]
+  }
   ];
 
   const menu = Menu.buildFromTemplate(template);
   Menu.setApplicationMenu(menu);
 }
+
+function createMathSymbolImage(symbol, color = '#2C3E50') {
+  const canvas = createCanvas(50, 20);
+  const ctx = canvas.getContext('2d');
+  
+  // Sfondo trasparente
+  ctx.fillStyle = 'transparent';
+  ctx.fillRect(0, 0, 50, 20);
+  
+  // Testo
+  ctx.fillStyle = color;
+  ctx.font = '16px Arial';
+  ctx.fillText(symbol, 5, 15);
+  
+  return canvas.toBuffer();
+}
+
+// Modifica la funzione colorizeEquationForPDF
+// Aggiungi queste funzioni helper prima della funzione colorizeEquationForPDF
+
+// Helper per convertire simboli Unicode in comandi LaTeX
+function convertUnicodeToLatex(text) {
+  const symbolMap = {
+      '∑': '\\sum',
+      '∫': '\\int',
+      '∂': '\\partial',
+      '∇': '\\nabla',
+      '∆': '\\Delta',
+      '√': '\\sqrt',
+      'π': '\\pi',
+      '∞': '\\infty',
+      'α': '\\alpha',
+      'β': '\\beta',
+      'γ': '\\gamma',
+      'δ': '\\delta',
+      'ε': '\\varepsilon',
+      'θ': '\\theta',
+      'λ': '\\lambda',
+      'μ': '\\mu',
+      'σ': '\\sigma',
+      'φ': '\\phi',
+      'ω': '\\omega',
+      '→': '\\to',
+      '±': '\\pm',
+      '≠': '\\neq',
+      '≡': '\\equiv',
+      '≈': '\\approx',
+      '≤': '\\leq',
+      '≥': '\\geq',
+      '∈': '\\in',
+      '∀': '\\forall',
+      '∃': '\\exists',
+      '⇒': '\\Rightarrow',
+      '×': '\\times',
+      '÷': '\\div',
+      '⋅': '\\cdot'
+  };
+
+  let result = text;
+  Object.keys(symbolMap).forEach(symbol => {
+      const regex = new RegExp(symbol, 'g');
+      result = result.replace(regex, symbolMap[symbol]);
+  });
+  
+  return result;
+}
+
+// Nuova funzione per scrivere equazioni matematiche nel PDF
+function writeMathEquation(doc, equation, variableColors, x, y) {
+  const colors = variableColors || {};
+  let currentY = y;
+  const lineHeight = 25;
+  const pageWidth = doc.page.width - 100;
+  const fs = require('fs');
+  const fontPath = path.join(__dirname, 'fonts', 'dejavu-fonts-ttf-2.37', 'ttf', 'DejaVuSans.ttf');
+
+  if (!fs.existsSync(fontPath)) {
+    console.error('Font non trovato:', fontPath);
+    return;
+  }
+
+  // Registra il font matematico
+  doc.registerFont('DejaVuSans', fontPath);
+  doc.font('DejaVuSans').fontSize(14);
+
+
+  
+  // Converti l'equazione in formato leggibile per PDF
+  let latexEquation = convertUnicodeToLatex(equation);
+  
+  // Semplifica ulteriormente per PDF
+  latexEquation = latexEquation
+      .replace(/\\sum/g, 'Σ')
+      .replace(/\\int/g, '∫')
+      .replace(/\\partial/g, '∂')
+      .replace(/\\nabla/g, '∇')
+      .replace(/\\Delta/g, 'Δ')
+      .replace(/\\sqrt/g, '√')
+      .replace(/\\pi/g, 'π')
+      .replace(/\\infty/g, '∞')
+      .replace(/\\alpha/g, 'α')
+      .replace(/\\beta/g, 'β')
+      .replace(/\\gamma/g, 'γ')
+      .replace(/\\delta/g, 'δ')
+      .replace(/\\varepsilon/g, 'ε')
+      .replace(/\\theta/g, 'θ')
+      .replace(/\\lambda/g, 'λ')
+      .replace(/\\mu/g, 'μ')
+      .replace(/\\sigma/g, 'σ')
+      .replace(/\\phi/g, 'φ')
+      .replace(/\\omega/g, 'ω')
+      .replace(/\\to/g, '→')
+      .replace(/\\pm/g, '±')
+      .replace(/\\neq/g, '≠')
+      .replace(/\\equiv/g, '≡')
+      .replace(/\\approx/g, '≈')
+      .replace(/\\leq/g, '≤')
+      .replace(/\\geq/g, '≥')
+      .replace(/\\in/g, '∈')
+      .replace(/\\forall/g, '∀')
+      .replace(/\\exists/g, '∃')
+      .replace(/\\Rightarrow/g, '⇒')
+      .replace(/\\times/g, '×')
+      .replace(/\\div/g, '÷')
+      .replace(/\\cdot/g, '⋅');
+  
+  // Usa un font che supporta più caratteri matematici
+  doc.font('Helvetica')
+     .fontSize(12)
+     .fillColor('#2C3E50');
+  
+  // Gestisci il testo lungo andando a capo
+  const words = latexEquation.split(/(\s+)/);
+  let currentX = x;
+  let line = '';
+  
+  for (const word of words) {
+      const testLine = line + word;
+      const testWidth = doc.widthOfString(testLine);
+      
+      if (testWidth > (pageWidth - currentX) && line !== '') {
+          // Scrivi la linea corrente
+          writeColoredLine(doc, line, colors, currentX, currentY);
+          currentY += lineHeight;
+          line = word;
+          currentX = x;
+      } else {
+          line = testLine;
+      }
+  }
+  
+  // Scrivi l'ultima linea
+  if (line) {
+      writeColoredLine(doc, line, colors, currentX, currentY);
+      currentY += lineHeight;
+  }
+  
+  return { newX: x, newY: currentY };
+}
+
+// Helper per scrivere una linea con variabili colorate
+function writeColoredLine(doc, line, colors, x, y) {
+  let currentX = x;
+  
+  // Cerca variabili nella linea
+  const words = line.split(/(\s+)/);
+  
+  for (const word of words) {
+      const cleanWord = word.trim();
+      
+      if (colors[cleanWord]) {
+          // Variabile colorata
+          doc.fillColor(colors[cleanWord])
+             .font('DejaVuSans');
+      } else {
+          // Testo normale
+          doc.fillColor('#2C3E50')
+             .font('DejaVuSans');
+      }
+      
+      doc.text(word, currentX, y);
+      currentX += doc.widthOfString(word);
+  }
+}
+
+// Sostituisci la funzione colorizeEquationForPDF con questa versione migliorata
+
+
+// Funzione per testo semplice senza simboli matematici
+function writeSimpleText(doc, text, variableColors, x, y) {
+  const colors = variableColors || {};
+  let currentY = y;
+  const lineHeight = 20;
+  const pageWidth = doc.page.width - 100;
+  
+  doc.font('DejaVuSans')
+     .fontSize(12)
+     .fillColor('#2C3E50');
+  
+  const words = text.split(/(\s+)/);
+  let currentX = x;
+  
+  for (const word of words) {
+      if (!word.trim()) {
+          currentX += doc.widthOfString(' ');
+          continue;
+      }
+      
+      const wordWidth = doc.widthOfString(word);
+      
+      if (currentX + wordWidth > pageWidth) {
+          currentX = x;
+          currentY += lineHeight;
+      }
+      
+      if (colors[word]) {
+          doc.fillColor(colors[word]).font('DejaVuSans');
+      } else {
+          doc.fillColor('#2C3E50').font('DejaVuSans');
+      }
+      
+      doc.text(word, currentX, currentY);
+      currentX += wordWidth;
+  }
+  
+  return { newX: currentX, newY: currentY + lineHeight };
+}
+
+// Nuova funzione per formattare equazioni LaTeX
+function formatLatexEquation(doc, equation, variableColors, x, y) {
+  const colors = variableColors || {};
+  let currentY = y;
+  
+  // Stile per matematica
+  doc.font('Helvetica')
+     .fontSize(14)
+     .fillColor('#2C3E50');
+  
+  // Semplifica LaTeX per il PDF (rimuovi comandi complessi)
+  let simplified = equation
+      .replace(/\\/g, ' ')
+      .replace(/\{/g, '(')
+      .replace(/\}/g, ')')
+      .replace(/\^/g, '^')
+      .replace(/_/g, '_');
+  
+  // Dividi in righe se troppo lunga
+  const lines = simplified.split('. ');
+  
+  lines.forEach(line => {
+      if (line.trim()) {
+          doc.text(line.trim(), x, currentY);
+          currentY += 25;
+      }
+  });
+  
+  return { newX: x, newY: currentY };
+}
+
 
 // GESTORI IPC
 ipcMain.handle('save-file', async (event, content, filePath) => {
@@ -138,9 +413,37 @@ ipcMain.handle('export-pdf', async (event, data) => {
       defaultPath: 'documento_matematico.pdf'
     });
     
+    if (!data) {
+      throw new Error('Nessun dato fornito per il PDF');
+    }
+       // Assicuriamoci che le strutture dati esistano
+       data.variables = data.variables || {};
+       data.variableColors = data.variableColors || {};
+       data.functions = data.functions || [];
+       
+       console.log('Export PDF - Dati validati:', {
+         variablesCount: Object.keys(data.variables).length,
+         colorsCount: Object.keys(data.variableColors).length,
+         functionsCount: data.functions.length
+       });
     if (!result.canceled) {
       return new Promise((resolve) => {
         const doc = new PDFDocument();
+        // ✅ Usa il percorso assoluto al file .ttf
+const fontPath = path.join(__dirname, 'fonts', 'dejavu-fonts-ttf-2.37', 'ttf', 'DejaVuSans.ttf');
+
+// Verifica che il file esista
+if (!fs.existsSync(fontPath)) {
+  console.error('Font non trovato:', fontPath);
+  return;
+}
+
+// ✅ Registra il font con nome e percorso
+doc.registerFont('DejaVuSans', fontPath);
+
+
+
+
         const stream = fs.createWriteStream(result.filePath);
         doc.pipe(stream);
         
@@ -151,7 +454,7 @@ ipcMain.handle('export-pdf', async (event, data) => {
            .text('DOCUMENTO MATEMATICO', { align: 'center' });
         
         doc.moveDown(0.5);
-        doc.fontSize(10)
+        doc.fontSize(12)
            .font('Helvetica')
            .fillColor('#7F8C8D')
            .text(`Generato con Math Editor Pro - ${new Date().toLocaleDateString('it-IT')}`, { align: 'center' });
@@ -161,13 +464,13 @@ ipcMain.handle('export-pdf', async (event, data) => {
         // VARIABILI
         if (data.variables && Object.keys(data.variables).length > 0) {
           doc.fontSize(16)
-             .font('Helvetica-Bold')
+             .font('DejaVuSans')
              .fillColor('#2C3E50')
              .text('VARIABILI DEFINITE:');
           
           doc.moveDown(0.5);
           doc.fontSize(12)
-             .font('Helvetica');
+             .font('DejaVuSans');
           
           let yPosition = doc.y;
           const pageWidth = doc.page.width - 100;
@@ -183,7 +486,7 @@ ipcMain.handle('export-pdf', async (event, data) => {
             
             // Nome variabile colorato
             doc.fillColor(color)
-               .font('Helvetica-Bold')
+               .font('DejaVuSans')
                .text(key, 60, yPosition);
             
             // Descrizione
@@ -215,47 +518,65 @@ ipcMain.handle('export-pdf', async (event, data) => {
         }
         
         // FUNZIONI MATEMATICHE
-        if (data.functions && data.functions.length > 0) {
-          doc.addPage();
-          
-          doc.fontSize(16)
-             .font('Helvetica-Bold')
-             .fillColor('#2C3E50')
-             .text('FUNZIONI MATEMATICHE:', 50, 100);
-          
-          doc.moveDown(1);
-          
-          let functionY = doc.y;
-          
-          data.functions.forEach((func, index) => {
-            // Numero equazione
-            doc.fontSize(10)
-               .font('Helvetica-Bold')
-               .fillColor('#7F8C8D')
-               .text(`${index + 1}.`, 50, functionY);
-            
-            // Equazione con colori
-            const equation = this.colorizeEquationForPDF(doc, func, data.variableColors, 70, functionY);
-            functionY = equation.newY + 15;
-            
-            // Linea separatrice
-            if (index < data.functions.length - 1) {
-              doc.moveTo(50, functionY - 5)
-                 .lineTo(doc.page.width - 50, functionY - 5)
-                 .strokeColor('#ECF0F1')
-                 .lineWidth(1)
-                 .stroke();
-              functionY += 10;
-            }
-            
-            // Controlla se serve nuova pagina
-            if (functionY > doc.page.height - 100 && index < data.functions.length - 1) {
-              doc.addPage();
-              functionY = 100;
-            }
-          });
-        }
-        
+// FUNZIONI MATEMATICHE - VERSIONE CORRETTA
+if (data.functions && data.functions.length > 0) {
+  // Verifica se abbiamo abbastanza spazio nella pagina corrente
+  if (doc.y > doc.page.height - 200) {
+    doc.addPage();
+    doc.y = 100;
+  } else {
+    doc.moveDown(2);
+  }
+  
+  doc.fontSize(16)
+     .font('Helvetica-Bold')
+     .fillColor('#2C3E50')
+     .text('FUNZIONI MATEMATICHE:');
+  
+  doc.moveDown(0.5);
+  
+  let functionY = doc.y + 10;
+  
+  data.functions.forEach((func, index) => {
+    // Controlla se serve nuova pagina prima di iniziare una nuova equazione
+    if (functionY > doc.page.height - 100) {
+      doc.addPage();
+      functionY = 100;
+    }
+    
+    // Numero equazione
+    doc.fontSize(10)
+       .font('DejaVuSans')
+       .fillColor('#7F8C8D')
+       .text(`${index + 1}.`, 50, functionY);
+    
+    // DEBUG: Log dell'equazione
+    console.log(`Processing function ${index + 1}:`, func);
+    
+    // Equazione con colori - con gestione errori migliorata
+    try {
+      const equation = colorizeEquationForPDF(doc, func, data.variableColors, 70, functionY);
+      functionY = equation.newY + 20;
+    } catch (error) {
+      // Fallback: equazione semplice
+      console.error('Errore colorizzazione equazione:', error);
+      doc.fillColor('#2C3E50')
+         .font('DejaVuSans')
+         .text(func, 70, functionY, { width: pageWidth - 80 });
+      functionY += 30;
+    }
+    
+    // Linea separatrice (tranne per l'ultima equazione)
+    if (index < data.functions.length - 1 && functionY < doc.page.height - 50) {
+      doc.moveTo(50, functionY - 10)
+         .lineTo(doc.page.width - 50, functionY - 10)
+         .strokeColor('#ECF0F1')
+         .lineWidth(1)
+         .stroke();
+      functionY += 15;
+    }
+  });
+}
         // FOOTER
         const pages = doc.bufferedPageRange();
         for (let i = 0; i < pages.count; i++) {
@@ -302,54 +623,48 @@ function hexToRgb(hex) {
 
 // Helper per colorare le equazioni nel PDF
 function colorizeEquationForPDF(doc, equation, variableColors, x, y) {
+  console.log('Processing equation for PDF:', equation);
+  
+  const colors = variableColors || {};
   let currentX = x;
   let currentY = y;
-  const words = equation.split(/(\s+)/);
   const lineHeight = 15;
   const pageWidth = doc.page.width - 100;
   
-  words.forEach(word => {
-    const trimmedWord = word.trim();
-    
-    if (!trimmedWord) {
-      currentX += doc.widthOfString(word);
-      return;
-    }
-    
-    // Controlla se è una variabile colorata
-    if (variableColors[trimmedWord]) {
-      const color = variableColors[trimmedWord];
-      const wordWidth = doc.widthOfString(trimmedWord);
-      
-      // Controlla se va a capo
-      if (currentX + wordWidth > pageWidth) {
-        currentX = x;
-        currentY += lineHeight;
+  // Usa DejaVuSans che supporta Unicode
+  doc.font('DejaVuSans')
+     .fontSize(12);
+  
+  // Dividi preservando tutti i caratteri
+  const words = equation.split(/(\s+)/);
+  
+  for (const word of words) {
+      if (!word.trim()) {
+          // Spazi
+          currentX += doc.widthOfString(word);
+          continue;
       }
       
-      doc.fillColor(color)
-         .font('Helvetica-Bold')
-         .text(trimmedWord, currentX, currentY);
-      
-      currentX += wordWidth;
-    } else {
       const wordWidth = doc.widthOfString(word);
       
       // Controlla se va a capo
       if (currentX + wordWidth > pageWidth) {
-        currentX = x;
-        currentY += lineHeight;
+          currentX = x;
+          currentY += lineHeight;
       }
       
-      doc.fillColor('#2C3E50')
-         .font('Helvetica')
-         .text(word, currentX, currentY);
+      // Colora solo se è una variabile definita
+      if (colors[word]) {
+          doc.fillColor(colors[word]);
+      } else {
+          doc.fillColor('#2C3E50');
+      }
       
+      doc.text(word, currentX, currentY);
       currentX += wordWidth;
-    }
-  });
+  }
   
-  return { newX: currentX, newY: currentY };
+  return { newX: currentX, newY: currentY + lineHeight };
 }
 
 ipcMain.handle('export-html', async (event, data) => {

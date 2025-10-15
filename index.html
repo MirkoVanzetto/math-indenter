@@ -257,5 +257,19 @@ Usa Ctrl+Enter per inserire rapidamente una riga vuota."></textarea>
     </div>
 
     <script src="renderer.js"></script>
+    <script>
+        // Test dei simboli matematici
+        function testMathSymbols() {
+            const testSymbols = "∑ ∫ ∂ ∇ ∆ √ π ∞ α β γ δ ε θ λ μ σ φ ω → ± ≠ ≡ ≈ ≤ ≥ ∈ ∀ ∃ ⇒ × ÷ ⋅";
+            document.getElementById('functionEditor').value = testSymbols + "\n\nf(x) = ∑(x_i) from i=1 to n\n\ng(x) = ∫ f(x) dx\n\nlim θ→0 sin(θ)/θ = 1";
+            window.mathEditor.updateMathPreview();
+            console.log('Simboli di test inseriti');
+        }
+        
+        // Esegui il test al caricamento se in sviluppo
+        if (process.env.NODE_ENV === 'development') {
+            setTimeout(testMathSymbols, 1000);
+        }
+        </script>
 </body>
 </html>

@@ -86,18 +86,15 @@ lim t→∞ (1 + 1/t)^t = e
         });
     }
 
-      async exportPDF() {
+    async exportPDF() {
         try {
-            const variablesContent = document.getElementById('variablesEditor').value;
-            const functionContent = document.getElementById('functionEditor').value;
-            const equations = this.splitIntoEquations(functionContent);
+            // Usa la nuova funzione per preparare i dati
+            const data = this.prepareDataForPDF();
             
-            // Prepara i dati per il PDF
-            const data = {
-                variables: this.variables,
-                variableColors: this.variableColors,
-                functions: equations.map(eq => this.cleanEquationForPDF(eq))
-            };
+            console.log('Dati per PDF:', {
+                variables: Object.keys(data.variables),
+                functions: data.functions
+            });
             
             this.updateStatus('Generando PDF...', 'info');
             
@@ -106,25 +103,21 @@ lim t→∞ (1 + 1/t)^t = e
             if (result.success) {
                 this.updateStatus(`✅ PDF esportato: ${result.path}`, 'success');
                 
-                // Mostra conferma
-                if (confirm('PDF creato con successo! Vuoi aprire la cartella contenente il file?')) {
-                    this.openFileLocation(result.path);
-                }
+                setTimeout(() => {
+                    if (confirm('PDF creato con successo! Vuoi aprire la cartella contenente il file?')) {
+                        this.showInFolder(result.path);
+                    }
+                }, 500);
             } else {
                 this.updateStatus(`❌ Errore PDF: ${result.error}`, 'danger');
+                console.error('Errore PDF:', result.error);
             }
         } catch (error) {
-            this.updateStatus(`❌ Errore durante l'esportazione: ${error.message}`, 'danger');
+            this.updateStatus(`❌ Errore durante l'esportazione PDF: ${error.message}`, 'danger');
+            console.error('Errore exportPDF:', error);
         }
     }
-
-    // Pulisce l'equazione per il PDF
-    cleanEquationForPDF(equation) {
-        return equation
-            .replace(/<[^>]*>/g, '') // Rimuove tag HTML
-            .replace(/\s+/g, ' ')    // Normalizza spazi
-            .trim();
-    }
+    
 
     // Apre la cartella del file (simulato)
     openFileLocation(filePath) {
@@ -137,7 +130,12 @@ lim t→∞ (1 + 1/t)^t = e
     // ESPORTAZIONE HTML
     async exportHTML() {
         try {
+            const variablesContent = document.getElementById('variablesEditor').value;
             const functionContent = document.getElementById('functionEditor').value;
+            
+            // Parse le variabili per assicurarci siano aggiornate
+            this.parseVariables();
+            
             const equations = this.splitIntoEquations(functionContent).map(eq => 
                 this.convertToMathJax(eq.trim())
             );
@@ -148,6 +146,8 @@ lim t→∞ (1 + 1/t)^t = e
                 functions: equations
             };
             
+            console.log('Dati per HTML:', data); // Debug
+            
             this.updateStatus('Generando HTML...', 'info');
             
             const result = await window.electronAPI.exportHTML(data);
@@ -155,16 +155,74 @@ lim t→∞ (1 + 1/t)^t = e
             if (result.success) {
                 this.updateStatus(`✅ HTML esportato: ${result.path}`, 'success');
                 
-                if (confirm('HTML creato con successo! Vuoi aprire la cartella contenente il file?')) {
-                    this.openFileLocation(result.path);
-                }
+                setTimeout(() => {
+                    if (confirm('HTML creato con successo! Vuoi aprire la cartella contenente il file?')) {
+                        this.showInFolder(result.path);
+                    }
+                }, 500);
             } else {
                 this.updateStatus(`❌ Errore HTML: ${result.error}`, 'danger');
+                console.error('Errore HTML:', result.error);
             }
         } catch (error) {
-            this.updateStatus(`❌ Errore durante l'esportazione: ${error.message}`, 'danger');
+            this.updateStatus(`❌ Errore durante l'esportazione HTML: ${error.message}`, 'danger');
+            console.error('Errore exportHTML:', error);
         }
     }
+
+    showInFolder(filePath) {
+        // In Electron potresti usare: require('electron').shell.showItemInFolder(filePath)
+        console.log('File salvato in:', filePath);
+        alert(`File salvato in:\n${filePath}`);
+    }
+    
+    // Pulisce l'equazione per il PDF
+
+    cleanEquationForPDF(equation) {
+        console.log('=== DEBUG CLEAN EQUATION ===');
+        console.log('Equazione originale:', equation);
+        console.log('CharCodes originali:', Array.from(equation).map(c => `${c}: ${c.charCodeAt(0)}`));
+        
+        // PRIMA di qualsiasi pulizia, preserva i simboli matematici Unicode
+        // Mappa dei simboli matematici da preservare
+        const mathSymbols = {
+            '∑': '∑',
+            '∫': '∫', 
+            '∂': '∂',
+            '∞': '∞',
+            '→': '→',
+            '∆': 'Δ',
+            '∇': '∇',
+            '√': '√',
+            'π': 'π',
+            'θ': 'θ',
+            'α': 'α',
+            'β': 'β',
+            'γ': 'γ',
+            'δ': 'δ',
+            'ε': 'ε',
+            'λ': 'λ',
+            'μ': 'μ',
+            'σ': 'σ',
+            'φ': 'φ',
+            'ω': 'ω'
+        };
+        
+        let preserved = equation;
+        
+          // Rimuovi SOLO i tag HTML se presenti
+    let cleaned = equation
+    .replace(/<[^>]*>/g, '') // Rimuovi tag HTML
+    .replace(/&nbsp;/g, ' ') // Sostituisci spazi non-breaking
+    .replace(/\s+/g, ' ') // Normalizza spazi multipli
+    .trim();
+
+console.log('Equazione finale pulita:', cleaned);
+
+return cleaned; // Restituisci l'equazione originale preservata
+    }
+    
+ 
 
     setupColorPicker() {
         const colorOptions = document.querySelectorAll('.color-option');
@@ -402,38 +460,132 @@ lim t→∞ (1 + 1/t)^t = e
         return content.split(/\n\s*\n/).filter(block => block.trim());
     }
 
+
     convertToMathJax(content) {
-        return content
-            .replace(/∑/g, '\\sum')
-            .replace(/∫/g, '\\int')
-            .replace(/∂/g, '\\partial')
-            .replace(/∇/g, '\\nabla')
-            .replace(/√(.+?)(?=[\s\)\]\}])/g, '\\sqrt{$1}')
-            .replace(/π/g, '\\pi')
-            .replace(/θ/g, '\\theta')
-            .replace(/α/g, '\\alpha')
-            .replace(/β/g, '\\beta')
-            .replace(/γ/g, '\\gamma')
-            .replace(/δ/g, '\\delta')
-            .replace(/ε/g, '\\varepsilon')
-            .replace(/λ/g, '\\lambda')
-            .replace(/μ/g, '\\mu')
-            .replace(/σ/g, '\\sigma')
-            .replace(/φ/g, '\\phi')
-            .replace(/ω/g, '\\omega')
-            .replace(/→/g, '\\to')
-            .replace(/±/g, '\\pm')
-            .replace(/≠/g, '\\neq')
-            .replace(/≤/g, '\\leq')
-            .replace(/≥/g, '\\geq')
-            .replace(/∈/g, '\\in')
-            .replace(/∀/g, '\\forall')
-            .replace(/∃/g, '\\exists')
-            .replace(/⇒/g, '\\Rightarrow')
-            .replace(/×/g, '\\times')
-            .replace(/lim\s+(\w+)→(\w+)\s+(.+)/g, '\\lim_{$1 \\to $2} $3')
-            .replace(/(\w+)'(\w*)/g, '\\frac{d$1}{d$2}');
+        // Decodifica simboli corrotti prima di tutto
+        content = this.decodeBrokenMathSymbols(content);
+    
+        const symbolMap = {
+            // Simboli matematici
+            8721: '\\sum',        // SOMMA
+            8734: '\\infty',      // INFINITO
+            8706: '\\partial',    // DERIVATA
+            8747: '\\int',        // INTEGRALE
+            8730: '\\sqrt{}',     // RADICE
+            
+            // Lettere greche maiuscole
+            913: 'A',             // Alpha
+            914: 'B',             // Beta  
+            915: '\\Gamma',       // Gamma
+            916: '\\Delta',       // Delta
+            917: 'E',             // Epsilon
+            918: 'Z',             // Zeta
+            919: 'H',             // Eta
+            920: '\\Theta',       // Theta
+            921: 'I',             // Iota
+            922: 'K',             // Kappa
+            923: '\\Lambda',      // Lambda
+            924: 'M',             // Mu
+            925: 'N',             // Nu
+            926: '\\Xi',          // Xi
+            927: 'O',             // Omicron
+            928: '\\Pi',          // Pi
+            929: 'P',             // Rho
+            931: '\\Sigma',       // Sigma
+            932: 'T',             // Tau
+            933: '\\Upsilon',     // Upsilon
+            934: '\\Phi',         // Phi
+            935: 'X',             // Chi
+            936: '\\Psi',         // Psi
+            937: '\\Omega',       // Omega
+            
+            // Lettere greche minuscole
+            945: '\\alpha',       // alpha
+            946: '\\beta',        // beta
+            947: '\\gamma',       // gamma
+            948: '\\delta',       // delta
+            949: '\\epsilon',     // epsilon
+            950: '\\zeta',        // zeta
+            951: '\\eta',         // eta
+            952: '\\theta',       // theta
+            953: '\\iota',        // iota
+            954: '\\kappa',       // kappa
+            955: '\\lambda',      // lambda
+            956: '\\mu',          // mu
+            957: '\\nu',          // nu
+            958: '\\xi',          // xi
+            959: 'o',             // omicron
+            960: '\\pi',          // pi
+            961: '\\rho',         // rho
+            962: '\\varsigma',    // sigma finale
+            963: '\\sigma',       // sigma
+            964: '\\tau',         // tau
+            965: '\\upsilon',     // upsilon
+            966: '\\phi',         // phi
+            967: '\\chi',         // chi
+            968: '\\psi',         // psi
+            969: '\\omega',       // omega
+            
+            // Altri simboli matematici
+            8594: '\\rightarrow', // freccia destra
+            177: '\\pm',          // più/meno
+            8800: '\\neq',        // diverso
+            8804: '\\leq',        // minore/uguale
+            8805: '\\geq',        // maggiore/uguale
+            8712: '\\in',         // appartiene
+            8704: '\\forall',     // per ogni
+            8707: '\\exists',     // esiste
+            215: '\\times',       // prodotto
+            247: '\\div',         // divisione
+            8729: '\\cdot',       // prodotto scalare
+            8728: '\\circ',       // composizione
+            8745: '\\cap',        // intersezione
+            8746: '\\cup',        // unione
+            8834: '\\subset',     // sottoinsieme
+            8838: '\\subseteq',   // sottoinsieme/uguale
+            8658: '\\Rightarrow', // implica
+            8660: '\\Leftrightarrow' // se e solo se
+        };
+    
+        let result = content;
+        
+        // Sostituisci tutti i simboli
+        Object.keys(symbolMap).forEach(symbol => {
+            const regex = new RegExp(this.escapeRegex(symbol), 'g');
+            result = result.replace(regex, symbolMap[symbol]);
+        });
+    
+        // Gestione speciale per radici
+        result = result.replace(/√(.+?)(?=[\s\)\]\}])/g, '\\sqrt{$1}');
+        
+        // Gestione speciale per limiti
+        result = result.replace(/lim\s+(\w+)→(\w+)\s+(.+)/g, '\\lim_{$1 \\to $2} $3');
+        
+        // Gestione speciale per derivate
+        result = result.replace(/(\w+)'(\w*)/g, '\\frac{d$1}{d$2}');
+    
+        return result;
     }
+    
+    decodeBrokenMathSymbols(content) {
+        const replacements = {
+            '': '∑',  // Sommatoria
+            '': '→',  // Freccia
+            '!': '∞',  // Infinito (alcuni editor lo perdono così)
+            '"': '∫',  // Integrale o carattere di controllo
+            '+from': '∫ from', // correzione per integrali scritti male
+            '/"': '∂', // Derivata parziale
+            '"y': '∂y', // Derivata y
+            '"t': '∂t'  // Derivata t
+        };
+    
+        for (const [bad, good] of Object.entries(replacements)) {
+            const regex = new RegExp(this.escapeRegex(bad), 'g');
+            content = content.replace(regex, good);
+        }
+        return content;
+    }
+    
 
     // TOOLTIP E INTERAZIONI
     addPreviewTooltipListeners() {
@@ -668,23 +820,31 @@ lim t→∞ (1 + 1/t)^t = e
         }
     }
 
-    async exportPDF() {
-        const functionContent = document.getElementById('functionEditor').value;
-        const equations = this.splitIntoEquations(functionContent);
-        
-        const data = {
-            variables: this.variables,
-            functions: equations
-        };
-        
-        const result = await window.electronAPI.exportPDF(data);
-        
-        if (result.success) {
-            this.updateStatus(`PDF esportato: ${result.path}`, 'success');
-        } else if (result.error) {
-            this.updateStatus(`Errore PDF: ${result.error}`, 'danger');
-        }
-    }
+ // AGGIUNGI questa nuova funzione per preparare i dati PDF
+prepareDataForPDF() {
+    const variablesContent = document.getElementById('variablesEditor').value;
+    const functionContent = document.getElementById('functionEditor').value;
+    
+    this.parseVariables();
+    
+    const equations = this.splitIntoEquations(functionContent)
+        .map(eq => this.cleanEquationForPDF(eq))
+        .filter(eq => eq.trim().length > 0);
+    
+    // DEBUG: verifica i caratteri Unicode
+    equations.forEach((eq, index) => {
+        console.log(`Equazione ${index + 1} per PDF:`, eq);
+        console.log(`Caratteri Unicode:`, Array.from(eq).map(c => 
+            `${c} (U+${c.charCodeAt(0).toString(16).toUpperCase()})`
+        ));
+    });
+    
+    return {
+        variables: this.variables || {},
+        variableColors: this.variableColors || {},
+        functions: equations
+    };
+}
 
     async exportHTML() {
         const functionContent = document.getElementById('functionEditor').value;
@@ -711,7 +871,7 @@ lim t→∞ (1 + 1/t)^t = e
         this.updateMathPreview();
         this.updateStatus('Editor pulito', 'warning');
     }
-
+    
     formatCode() {
         const editor = document.getElementById('functionEditor');
         let content = editor.value;
@@ -763,8 +923,14 @@ lim t→∞ (1 + 1/t)^t = e
         window.electronAPI.onMenuOpenFile((event, content, filePath) => this.openFile(content, filePath));
         window.electronAPI.onMenuSaveFile(() => this.saveFile());
         window.electronAPI.onMenuSaveAsFile(() => this.saveFile(true));
-        window.electronAPI.onMenuExportPDF(() => this.exportPDF());
-        window.electronAPI.onMenuExportHTML(() => this.exportHTML());
+        window.electronAPI.onMenuExportPDF(() => {
+            console.log('Menu Export PDF chiamato');
+            this.exportPDF();
+        });
+        window.electronAPI.onMenuExportHTML(() => {
+            console.log('Menu Export HTML chiamato');
+            this.exportHTML();
+        });
     }
 
     async newFile() {
@@ -782,19 +948,28 @@ lim t→∞ (1 + 1/t)^t = e
 
     openFile(content, filePath) {
         try {
+            console.log('Tentativo di aprire file:', filePath);
             const data = JSON.parse(content);
+            
             document.getElementById('variablesEditor').value = data.variables || '';
-            document.getElementById('functionEditor').value = data.function || '';
+            document.getElementById('functionEditor').value = data.function || data.functions || '';
             this.variableColors = data.colors || {};
             this.currentFilePath = filePath;
+            
             this.parseVariables();
             this.updateMathPreview();
             this.updateStatus(`File aperto: ${filePath}`, 'success');
+            
+            console.log('File caricato correttamente');
         } catch (error) {
+            console.error('Errore parsing JSON, apro come testo semplice:', error);
+            // Fallback: apri come testo semplice
             document.getElementById('functionEditor').value = content;
+            document.getElementById('variablesEditor').value = '';
             this.currentFilePath = filePath;
+            this.parseVariables();
             this.updateMathPreview();
-            this.updateStatus(`File aperto: ${filePath}`, 'success');
+            this.updateStatus(`File aperto (testo): ${filePath}`, 'success');
         }
     }
 }
