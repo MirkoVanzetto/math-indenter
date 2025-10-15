@@ -30,6 +30,9 @@ npm run dist
 Open dist -> win-unpacked-> run the exe
 INSTALLER NOT WORKING FOR NOW!
 
+
+SCARICA LA VERSIONE PORTABLE QUI: https://mega.nz/file/vXA10BwA#P58lNV_1lDbOYgPP6Ks7MiS2Twe2UEleaqikK4vcASo
+
 👨‍💻 Autore
 Mirko Vanzetto
 
