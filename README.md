@@ -10,5 +10,6 @@ Indenta automaticamente le espressioni e assegna colori distintivi alle variabil
 📤 Export PDF
 Math Indenter permette di esportare le funzioni formattate in PDF, mantenendo colori e indentazione.
 👨‍💻 Autore
+
 Mirko Vanzetto
 
