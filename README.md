@@ -18,6 +18,18 @@ Indenta automaticamente le espressioni e assegna colori distintivi alle variabil
 Math Indenter permette di esportare le funzioni formattate in PDF, mantenendo colori e indentazione.
 
 
+
+HOW TO INSTALL
+
+npm install
+
+npm start
+
+npm run dist
+
+Open dist -> win-unpacked-> run the exe
+INSTALLER NOT WORKING FOR NOW!
+
 👨‍💻 Autore
 Mirko Vanzetto
 
